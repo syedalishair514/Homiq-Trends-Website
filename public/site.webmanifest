@@ -1,0 +1,16 @@
+{
+  "name": "Homiq Trends Premium E-Commerce",
+  "short_name": "Homiq Trends",
+  "description": "Curated premium lifestyle, luxury decors, and trends.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCFBF7",
+  "theme_color": "#BFA15F",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
