@@ -1,0 +1,58 @@
+import { Category } from "@/types/category";
+
+export const CATEGORIES: Category[] = [
+  {
+    id: "cat-1",
+    name: "Living Room",
+    slug: "living-room",
+    description: "Sofas, luxury throws, and accent tables designed for hospitality.",
+    image: "/images/categories/category-living-room.jpg",
+    productCount: 42,
+    featured: true,
+  },
+  {
+    id: "cat-2",
+    name: "Bedroom",
+    slug: "bedroom",
+    description: "Organic linens, fine velvet cushions, and calming bedside decors.",
+    image: "/images/categories/category-bedroom.jpg",
+    productCount: 28,
+    featured: true,
+  },
+  {
+    id: "cat-3",
+    name: "Kitchen",
+    slug: "kitchen",
+    description: "Handmade ceramic bowls, glassware collections, and brass grates.",
+    image: "/images/categories/category-kitchen.jpg",
+    productCount: 35,
+    featured: true,
+  },
+  {
+    id: "cat-4",
+    name: "Bathroom",
+    slug: "bathroom",
+    description: "Plush organic towels, marble soap trays, and elegant dispensers.",
+    image: "/images/categories/category-bathroom.jpg",
+    productCount: 19,
+    featured: false,
+  },
+  {
+    id: "cat-5",
+    name: "Office",
+    slug: "office",
+    description: "Minimal desk planners, brass bookends, and ergonomic ceramics.",
+    image: "/images/categories/category-office.jpg",
+    productCount: 22,
+    featured: false,
+  },
+  {
+    id: "cat-6",
+    name: "Decoration",
+    slug: "decoration",
+    description: "Sculptural clay vases, geometric mirrors, and amber candles.",
+    image: "/images/categories/category-decoration.jpg",
+    productCount: 54,
+    featured: true,
+  },
+];

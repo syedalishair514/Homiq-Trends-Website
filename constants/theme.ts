@@ -7,12 +7,15 @@ export const DESIGN_SYSTEM = {
     badge: "rounded-full",
   },
   spacing: {
-    container: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    container: "max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-10",
     section: "py-16 sm:py-24",
   },
   shadow: {
-    card: "shadow-sm hover:shadow-xl transition-shadow duration-300",
-    button: "shadow-sm hover:shadow-md active:shadow-sm",
-    navbar: "shadow-sm backdrop-blur-md",
+    card: "shadow-xs hover:shadow-md transition-shadow duration-300",
+    button: "shadow-xs hover:shadow-md active:shadow-xs",
+    navbar: "shadow-[0_2px_15px_-5px_rgba(217,183,154,0.06)] backdrop-blur-md",
   },
+  layout: {
+    navbarHeight: "var(--navbar-height)",
+  }
 };

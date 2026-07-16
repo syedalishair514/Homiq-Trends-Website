@@ -43,62 +43,64 @@
 }
 
 :root {
-  --background: #FCFBF7; /* Premium Warm Cream */
-  --foreground: #151515; /* Rich Matte Charcoal */
-  --card: #FCFBF7;
-  --card-foreground: #151515;
-  --popover: #FCFBF7;
-  --popover-foreground: #151515;
-  --primary: #BFA15F; /* Homiq Luxury Gold */
-  --primary-foreground: #0C0C0C;
-  --secondary: #EFECE6; /* Warm Cashmere */
-  --secondary-foreground: #151515;
-  --muted: #FAF9F6;
-  --muted-foreground: #706E69; /* Soft Warm Gray */
-  --accent: #BFA15F;
-  --accent-foreground: #FCFBF7;
+  --navbar-height: 116px;
+  --background: #FAFAF8; /* Premium warm background */
+  --foreground: #1F1F1F; /* Primary rich text */
+  --card: #FFFFFF; /* Surface */
+  --card-foreground: #1F1F1F;
+  --popover: #FFFFFF;
+  --popover-foreground: #1F1F1F;
+  --primary: #D9B79A; /* Primary warm beige */
+  --primary-foreground: #FFFFFF;
+  --secondary: #F8F5F2; /* Section background */
+  --secondary-foreground: #1F1F1F;
+  --muted: #FAFAF8;
+  --muted-foreground: #666666; /* Secondary soft text */
+  --accent: #C69A63; /* Accent warm gold/brown */
+  --accent-foreground: #FFFFFF;
   --destructive: #BD3C3C;
-  --border: #E5E0D8;
-  --input: #E5E0D8;
-  --ring: #BFA15F;
+  --border: #EAEAEA; /* Soft gray border */
+  --input: #EAEAEA;
+  --ring: #D9B79A;
   --radius: 0.75rem; /* Base radius corresponding to rounded-xl for buttons/inputs */
-  --sidebar: #FCFBF7;
-  --sidebar-foreground: #151515;
-  --sidebar-primary: #BFA15F;
-  --sidebar-primary-foreground: #FCFBF7;
-  --sidebar-accent: #EFECE6;
-  --sidebar-accent-foreground: #151515;
-  --sidebar-border: #E5E0D8;
-  --sidebar-ring: #BFA15F;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1F1F1F;
+  --sidebar-primary: #D9B79A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F8F5F2;
+  --sidebar-accent-foreground: #1F1F1F;
+  --sidebar-border: #EAEAEA;
+  --sidebar-ring: #D9B79A;
 }
 
 .dark {
-  --background: #0C0C0C; /* Premium Matte Black */
-  --foreground: #FCFBF7; /* Warm White */
-  --card: #151515;
-  --card-foreground: #FCFBF7;
-  --popover: #151515;
-  --popover-foreground: #FCFBF7;
-  --primary: #BFA15F; /* Homiq Luxury Gold */
-  --primary-foreground: #0C0C0C;
-  --secondary: #1E1E1E;
-  --secondary-foreground: #FCFBF7;
-  --muted: #262626;
-  --muted-foreground: #A8A29E;
-  --accent: #BFA15F;
-  --accent-foreground: #FCFBF7;
+  --navbar-height: 116px;
+  --background: #181816; /* Dark taupe background */
+  --foreground: #F5F2EC; /* Off-white text */
+  --card: #222220; /* Soft dark surface */
+  --card-foreground: #F5F2EC;
+  --popover: #222220;
+  --popover-foreground: #F5F2EC;
+  --primary: #D9B79A;
+  --primary-foreground: #181816;
+  --secondary: #2E2E2A;
+  --secondary-foreground: #F5F2EC;
+  --muted: #2A2A27;
+  --muted-foreground: #9E988F;
+  --accent: #C69A63;
+  --accent-foreground: #181816;
   --destructive: #E54848;
-  --border: #262626;
-  --input: #262626;
-  --ring: #BFA15F;
-  --sidebar: #151515;
-  --sidebar-foreground: #FCFBF7;
-  --sidebar-primary: #BFA15F;
-  --sidebar-primary-foreground: #0C0C0C;
-  --sidebar-accent: #1E1E1E;
-  --sidebar-accent-foreground: #FCFBF7;
-  --sidebar-border: #262626;
-  --sidebar-ring: #BFA15F;
+  --border: #2E2E2A;
+  --input: #2E2E2A;
+  --ring: #D9B79A;
+  --sidebar: #222220;
+  --sidebar-foreground: #F5F2EC;
+  --sidebar-primary: #D9B79A;
+  --sidebar-primary-foreground: #181816;
+  --sidebar-accent: #2E2E2A;
+  --sidebar-accent-foreground: #F5F2EC;
+  --sidebar-border: #2E2E2A;
+  --sidebar-ring: #D9B79A;
 }
 
 @layer base {
@@ -106,9 +108,18 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
   html {
+    scroll-behavior: smooth;
     @apply font-sans;
+  }
+  ::selection {
+    background-color: var(--primary);
+    color: #1F1F1F;
+  }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1.5px var(--accent) !important;
   }
 }
