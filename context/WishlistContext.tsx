@@ -165,8 +165,10 @@ export const WishlistProviderWrapper: React.FC<{ children: React.ReactNode }> = 
     }
   }, [wishlist, user]);
 
+  const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
   const addToWishlist = async (product: Product) => {
-    if (user) {
+    if (user && isUuid(product.id)) {
       const supabase = createClient();
       const { error } = await supabase
         .from("wishlist_items")
@@ -191,7 +193,7 @@ export const WishlistProviderWrapper: React.FC<{ children: React.ReactNode }> = 
   };
 
   const removeFromWishlist = async (productId: string) => {
-    if (user) {
+    if (user && isUuid(productId)) {
       const supabase = createClient();
       const { error } = await supabase
         .from("wishlist_items")

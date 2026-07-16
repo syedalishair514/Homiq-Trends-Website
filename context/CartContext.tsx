@@ -173,8 +173,10 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [cartItems, user]);
 
+  const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
   const addToCart = async (product: Product, quantity = 1, attributes?: Record<string, string>) => {
-    if (user) {
+    if (user && isUuid(product.id)) {
       const supabase = createClient();
       const existing = cartItems.find((i) => i.productId === product.id);
       const newQty = existing ? existing.quantity + quantity : quantity;
@@ -202,7 +204,7 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
           return updated;
         }
         const newItem: CartItem = {
-          id: `${product.id}-${Date.now()}`,
+          id: isUuid(product.id) ? `${product.id}-${Date.now()}` : product.id,
           productId: product.id,
           name: product.name,
           price: product.salePrice ?? product.price,
@@ -217,7 +219,7 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const removeFromCart = async (itemId: string) => {
-    if (user) {
+    if (user && isUuid(itemId)) {
       const supabase = createClient();
       const { error } = await supabase
         .from("cart_items")
@@ -240,7 +242,7 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
       return;
     }
 
-    if (user) {
+    if (user && isUuid(itemId)) {
       const supabase = createClient();
       const { error } = await supabase
         .from("cart_items")
