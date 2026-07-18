@@ -41,8 +41,13 @@ export default function LoginPage() {
       toast.error(error.message);
       setIsLoading(false);
     } else {
+      const { data: { user } } = await supabase.auth.getUser();
       toast.success("Successfully logged in!");
-      router.push("/profile");
+      if (user?.user_metadata?.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/profile");
+      }
       router.refresh();
     }
   };

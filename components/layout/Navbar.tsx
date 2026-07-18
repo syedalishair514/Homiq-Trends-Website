@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Search, ShoppingBag, User, Heart, Sun, Moon, ArrowRight, Trash2 } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, User, Heart, Sun, Moon, ArrowRight, Trash2, Shield } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useCart } from "@/context/CartContext";
 import { useSearch } from "@/context/SearchContext";
@@ -32,6 +33,23 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const isHidden = scrollDirection === "down" && !isAtTop;
 
@@ -261,6 +279,21 @@ export default function Navbar() {
                 </Button>
               </Link>
 
+              {/* Admin Link */}
+              {user?.user_metadata?.role === "admin" && (
+                <Link href="/admin" className="hidden sm:inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-primary hover:text-accent hover:bg-transparent cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                    aria-label="Admin Dashboard"
+                    title="Admin Dashboard"
+                  >
+                    <Shield className="w-4.5 h-4.5 stroke-[1.5]" />
+                  </Button>
+                </Link>
+              )}
+
               {/* Mobile Menu Toggle */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger
@@ -312,6 +345,20 @@ export default function Navbar() {
                     >
                       <User className="w-4 h-4" /> Account Profile
                     </Link>
+
+                    {/* Admin Dashboard Mobile Shortcut */}
+                    {user?.user_metadata?.role === "admin" && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "text-sm font-sans uppercase tracking-[0.15em] hover:text-primary py-2.5 px-3 rounded-xl transition-all font-semibold flex items-center gap-2 text-primary bg-primary/5",
+                          pathname === "/admin" && "bg-primary/15"
+                        )}
+                      >
+                        <Shield className="w-4 h-4" /> Admin Console
+                      </Link>
+                    )}
                   </div>
                 </SheetContent>
               </Sheet>
