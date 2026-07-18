@@ -77,8 +77,8 @@ export default function Navbar() {
         >
           <div className="max-w-[1400px] w-full mx-auto px-6 sm:px-8 lg:px-10 h-full flex items-center justify-between">
             {/* Logo */}
-            <Link href={ROUTES.HOME} className="flex items-center gap-2">
-              <span className="font-heading text-2xl font-semibold tracking-[0.28em] text-foreground uppercase transition-all duration-300">
+            <Link href={ROUTES.HOME} className="flex items-center gap-2 shrink-0">
+              <span className="font-heading text-lg sm:text-2xl font-semibold tracking-[0.18em] sm:tracking-[0.28em] text-foreground uppercase transition-all duration-300">
                 Homiq<span className="text-primary font-light">Trends</span>
               </span>
             </Link>
@@ -137,7 +137,7 @@ export default function Navbar() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="hover:text-accent hover:bg-transparent cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                className="hidden sm:inline-flex hover:text-accent hover:bg-transparent cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
                 aria-label="Toggle theme"
               >
                 {!mounted ? (
@@ -150,7 +150,7 @@ export default function Navbar() {
               </Button>
 
               {/* Wishlist */}
-              <Link href={ROUTES.WISHLIST}>
+              <Link href={ROUTES.WISHLIST} className="hidden sm:inline-flex">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -383,6 +383,35 @@ export default function Navbar() {
                     >
                       <User className="w-4 h-4" /> Account Profile
                     </Link>
+
+                    {/* Mobile Wishlist Link */}
+                    <Link
+                      href={ROUTES.WISHLIST}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        "text-sm font-sans uppercase tracking-[0.15em] hover:text-primary py-2.5 px-3 rounded-xl transition-all font-medium flex items-center gap-2",
+                        pathname === ROUTES.WISHLIST
+                          ? "text-primary bg-primary/10"
+                          : "text-foreground/80 hover:bg-secondary"
+                      )}
+                    >
+                      <Heart className="w-4 h-4" /> Wishlist ({wishlist.length})
+                    </Link>
+
+                    {/* Mobile Theme Toggle Button */}
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between text-left text-sm font-sans uppercase tracking-[0.15em] hover:text-primary py-2.5 px-3 rounded-xl transition-all font-medium text-foreground/80 hover:bg-secondary cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                        <span>Theme Mode</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-accent">{theme}</span>
+                    </button>
 
                     {/* Admin Dashboard Mobile Shortcut */}
                     {user?.user_metadata?.role === "admin" && (
