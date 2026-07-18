@@ -365,14 +365,14 @@ export default function AdminDashboardPage() {
       // 3. Fetch Orders
       const { data: orderList } = await supabase
         .from("orders")
-        .select("*, profiles(full_name, email), order_items(*, products(*)), addresses(*)")
+        .select("*, profiles(full_name, username), order_items(*, products(*)), addresses(*)")
         .order("created_at", { ascending: false });
 
       if (orderList && orderList.length > 0) {
         setOrders(orderList.map((o: any) => ({
           id: o.id,
           customerName: o.profiles?.full_name || "Guest Buyer",
-          customerEmail: o.profiles?.email || "guest@homiqtrends.com",
+          customerEmail: o.profiles?.username || "guest@homiqtrends.com",
           date: new Date(o.created_at).toISOString().split("T")[0],
           total: Number(o.total),
           status: o.status as any,
