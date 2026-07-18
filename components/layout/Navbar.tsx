@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Search, ShoppingBag, User, Heart, Sun, Moon, ArrowRight, Trash2, Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -25,6 +25,7 @@ import AnnouncementBar from "@/features/home/AnnouncementBar/AnnouncementBar";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { scrollDirection, isAtTop } = useScrollDirection();
   const { cartCount, cartItems, cartTotal, updateQuantity, removeFromCart } = useCart();
   const { wishlist } = useWishlist();
@@ -475,6 +476,12 @@ export default function Navbar() {
                 placeholder="Search premium products..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    closeSearch();
+                    router.push(`/search?q=${encodeURIComponent(query)}`);
+                  }
+                }}
                 autoFocus
                 className="bg-transparent border-none text-lg font-light font-sans text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 w-full"
               />

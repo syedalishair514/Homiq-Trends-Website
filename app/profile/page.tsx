@@ -715,7 +715,7 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {[
                         { label: "Completed Orders", val: orders.length, desc: "Bespoke listings" },
-                        { label: "Total Spent", val: `$${totalSpent}`, desc: "Fine curation" },
+                        { label: "Total Spent", val: `Rs. ${totalSpent}`, desc: "Fine collection" },
                         { label: "Saved in List", val: wishlist.length, desc: "Wishlist items" },
                         { label: "Alerts Pending", val: notifications.filter(n => n.unread).length, desc: "Unread alerts" }
                       ].map((stat, i) => (
@@ -1021,13 +1021,13 @@ export default function ProfilePage() {
                             </div>
                             <div className="border-t border-border pt-3 flex justify-between items-baseline text-sm">
                               <span className="font-bold text-foreground">Total Paid</span>
-                              <span className="text-base font-extrabold text-foreground">${selectedOrder.total}</span>
+                              <span className="text-base font-extrabold text-foreground">Rs. {selectedOrder.total}</span>
                             </div>
                           </div>
 
                           <div className="border-t border-border/60 pt-4 text-[10px] text-muted-foreground/80 leading-relaxed font-light">
                             <strong>Delivery Destination Node:</strong> {selectedOrder.address}<br />
-                            Thank you for partnering with Homiq Trends design curation houses. Transactions are fully secured.
+                            Thank you for partnering with Homiq Trends design collection houses. Transactions are fully secured.
                           </div>
                         </div>
                       </div>

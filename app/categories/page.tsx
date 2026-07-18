@@ -52,7 +52,7 @@ export default function CategoriesPage() {
           <div className="space-y-12">
             <SectionHeading
               title="Shop by Room & Categories"
-              subtitle="Curation Directory"
+              subtitle="Collection Directory"
               description="Browse signature collections designed to bring warmth, functionality, and organic harmony to every corner of your home."
             />
 
@@ -94,7 +94,7 @@ export default function CategoriesPage() {
                         href={`/products?category=${cat.slug}`}
                         className="text-xs text-primary group-hover:text-primary/80 transition-colors font-semibold uppercase tracking-wider flex items-center gap-1"
                       >
-                        Browse Curation &rarr;
+                        Browse Collection &rarr;
                       </Link>
                     </div>
                   </div>

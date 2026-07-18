@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PRODUCTS } from "@/constants/products";
 import Container from "@/components/shared/Container";
@@ -15,6 +15,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { DESIGN_SYSTEM } from "@/constants/theme";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { Product } from "@/types/product";
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -26,7 +28,50 @@ function SearchPageContent() {
   
   // Sidebar filters
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [priceLimit, setPriceLimit] = useState<number>(1000);
+  const [priceLimit, setPriceLimit] = useState<number>(150000); // Higher default for Rs range
+
+  const [productsList, setProductsList] = useState<Product[]>([]);
+
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("products")
+          .select("*, product_images(*)");
+
+        if (!error && data && data.length > 0) {
+          const mapped: Product[] = data.map((p: any) => ({
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            slug: p.slug,
+            shortDescription: p.short_description,
+            description: p.description,
+            price: Number(p.price),
+            salePrice: p.sale_price ? Number(p.sale_price) : undefined,
+            images: p.product_images?.sort((a: any, b: any) => a.priority - b.priority).map((img: any) => img.image_url) || [],
+            category: p.category || "Decoration",
+            rating: p.rating ? Number(p.rating) : 5,
+            reviewsCount: p.reviews_count || 0,
+            stock: p.stock,
+            isFeatured: p.rating >= 4.7,
+            bestSeller: p.reviews_count > 30,
+            newArrival: false,
+            createdAt: p.created_at
+          }));
+          setProductsList(mapped);
+        } else {
+          setProductsList(PRODUCTS);
+        }
+      } catch {
+        setProductsList(PRODUCTS);
+      }
+    }
+    loadProducts();
+  }, []);
+
+  const activeProducts = productsList.length > 0 ? productsList : PRODUCTS;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +84,7 @@ function SearchPageContent() {
 
   // Filtered list
   const searchResults = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return activeProducts.filter((product) => {
       const matchesQuery =
         !queryParam ||
         product.name.toLowerCase().includes(queryParam.toLowerCase()) ||
@@ -55,9 +100,9 @@ function SearchPageContent() {
 
       return matchesQuery && matchesCategory && matchesPrice;
     });
-  }, [queryParam, selectedCategory, priceLimit]);
+  }, [queryParam, selectedCategory, priceLimit, activeProducts]);
 
-  const categories = ["All", ...Array.from(new Set(PRODUCTS.map((p) => p.category)))];
+  const categories = ["All", ...Array.from(new Set(activeProducts.map((p) => p.category)))];
 
   return (
     <>
@@ -136,13 +181,13 @@ function SearchPageContent() {
                 <div className="space-y-3 pt-2">
                   <div className="flex justify-between items-baseline">
                     <h4 className="text-[10px] uppercase tracking-wider font-bold text-primary">Price Limit</h4>
-                    <span className="text-xs font-bold text-accent">${priceLimit}</span>
+                    <span className="text-xs font-bold text-accent">Rs. {priceLimit.toLocaleString()}</span>
                   </div>
                   <input
                     type="range"
                     min={0}
-                    max={1000}
-                    step={10}
+                    max={150000}
+                    step={500}
                     value={priceLimit}
                     onChange={(e) => setPriceLimit(Number(e.target.value))}
                     className="w-full h-1 bg-border rounded-lg appearance-none cursor-pointer accent-primary"

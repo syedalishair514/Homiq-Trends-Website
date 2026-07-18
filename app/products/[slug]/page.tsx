@@ -38,6 +38,47 @@ function ProductDetailsContent({ params }: ProductDetailsProps) {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
+  const [allProductsList, setAllProductsList] = useState<Product[]>([]);
+
+  useEffect(() => {
+    async function loadAllProducts() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("products")
+          .select("*, product_images(*)");
+        if (!error && data && data.length > 0) {
+          const mapped: Product[] = data.map((p: any) => ({
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            slug: p.slug,
+            shortDescription: p.short_description,
+            description: p.description,
+            price: Number(p.price),
+            salePrice: p.sale_price ? Number(p.sale_price) : undefined,
+            images: p.product_images?.sort((a: any, b: any) => a.priority - b.priority).map((img: any) => img.image_url) || [],
+            category: p.category || "Decoration",
+            rating: p.rating ? Number(p.rating) : 5,
+            reviewsCount: p.reviews_count || 0,
+            stock: p.stock,
+            isFeatured: p.rating >= 4.7,
+            bestSeller: p.reviews_count > 30,
+            newArrival: false,
+            createdAt: p.created_at
+          }));
+          setAllProductsList(mapped);
+        } else {
+          setAllProductsList(PRODUCTS);
+        }
+      } catch {
+        setAllProductsList(PRODUCTS);
+      }
+    }
+    loadAllProducts();
+  }, []);
+
+  const activeAllProducts = allProductsList.length > 0 ? allProductsList : PRODUCTS;
 
   useEffect(() => {
     async function loadProduct() {
@@ -215,7 +256,7 @@ function ProductDetailsContent({ params }: ProductDetailsProps) {
       const saved = JSON.parse(localStorage.getItem("recently_viewed") || "[]");
       const filteredSaved = saved.filter((id: string) => id !== product.id);
       const matched = filteredSaved
-        .map((id: string) => PRODUCTS.find((p) => p.id === id))
+        .map((id: string) => activeAllProducts.find((p) => p.id === id))
         .filter(Boolean) as Product[];
       setTimeout(() => {
         setRecentlyViewed(matched);
@@ -320,7 +361,7 @@ function ProductDetailsContent({ params }: ProductDetailsProps) {
     );
   }
 
-  const recommended = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const recommended = activeAllProducts.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
     <div key={slug} className="relative">

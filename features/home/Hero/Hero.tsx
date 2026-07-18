@@ -33,8 +33,8 @@ export default function Hero() {
           const mapped = data.map((b: any) => ({
             id: b.id,
             title: b.heading,
-            subtitle: b.subtitle || "EXCLUSIVE CURATION",
-            description: b.description || "Curated luxury home items and organic textile design collections.",
+            subtitle: b.subtitle || "EXCLUSIVE COLLECTION",
+            description: b.description || "Luxury home items and organic textile design collections.",
             buttonText: b.cta_text || "Shop Collection",
             buttonLink: b.cta_link || "/products",
             mediaUrl: b.image_url

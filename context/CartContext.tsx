@@ -169,16 +169,32 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
   const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
   const addToCart = async (product: Product, quantity = 1, attributes?: Record<string, string>) => {
-    if (user && isUuid(product.id)) {
+    let resolvedProductId = product.id;
+    let resolvedIsUuid = isUuid(product.id);
+
+    if (user && !resolvedIsUuid) {
       const supabase = createClient();
-      const existing = cartItems.find((i) => i.productId === product.id);
+      const { data: dbProd } = await supabase
+        .from("products")
+        .select("id")
+        .eq("slug", product.slug)
+        .single();
+      if (dbProd) {
+        resolvedProductId = dbProd.id;
+        resolvedIsUuid = true;
+      }
+    }
+
+    if (user && resolvedIsUuid) {
+      const supabase = createClient();
+      const existing = cartItems.find((i) => i.productId === resolvedProductId);
       const newQty = existing ? existing.quantity + quantity : quantity;
 
       const { error } = await supabase
         .from("cart_items")
         .upsert({
           user_id: user.id,
-          product_id: product.id,
+          product_id: resolvedProductId,
           quantity: newQty
         }, { onConflict: "user_id,product_id" });
 
@@ -190,15 +206,15 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
       }
     } else {
       setCartItems((prev) => {
-        const existingItemIndex = prev.findIndex((item) => item.productId === product.id);
+        const existingItemIndex = prev.findIndex((item) => item.productId === resolvedProductId);
         if (existingItemIndex > -1) {
           const updated = [...prev];
           updated[existingItemIndex].quantity += quantity;
           return updated;
         }
         const newItem: CartItem = {
-          id: isUuid(product.id) ? `${product.id}-${Date.now()}` : product.id,
-          productId: product.id,
+          id: resolvedIsUuid ? `${resolvedProductId}-${Date.now()}` : resolvedProductId,
+          productId: resolvedProductId,
           name: product.name,
           price: product.salePrice ?? product.price,
           image: product.images[0] || "",
@@ -213,21 +229,31 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const removeFromCart = async (itemId: string) => {
-    if (user && isUuid(itemId)) {
+    if (user) {
       const supabase = createClient();
-      const { error } = await supabase
-        .from("cart_items")
-        .delete()
-        .eq("id", itemId);
-
-      if (error) {
-        toast.error("Failed to remove item: " + error.message);
-      } else {
-        await fetchDbCart(user.id);
+      let dbItemId = itemId;
+      if (!isUuid(itemId)) {
+        const matchingItem = cartItems.find((i) => i.id === itemId || i.productId === itemId);
+        if (matchingItem && isUuid(matchingItem.productId)) {
+          dbItemId = matchingItem.productId;
+        }
       }
-    } else {
-      setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+
+      if (isUuid(dbItemId)) {
+        const { error } = await supabase
+          .from("cart_items")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("product_id", dbItemId);
+
+        if (error) {
+          toast.error("Failed to remove item: " + error.message);
+        } else {
+          await fetchDbCart(user.id);
+        }
+      }
     }
+    setCartItems((prev) => prev.filter((item) => item.id !== itemId && item.productId !== itemId));
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {
@@ -236,23 +262,33 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
       return;
     }
 
-    if (user && isUuid(itemId)) {
+    if (user) {
       const supabase = createClient();
-      const { error } = await supabase
-        .from("cart_items")
-        .update({ quantity })
-        .eq("id", itemId);
-
-      if (error) {
-        toast.error("Failed to update quantity: " + error.message);
-      } else {
-        await fetchDbCart(user.id);
+      let dbItemId = itemId;
+      if (!isUuid(itemId)) {
+        const matchingItem = cartItems.find((i) => i.id === itemId || i.productId === itemId);
+        if (matchingItem && isUuid(matchingItem.productId)) {
+          dbItemId = matchingItem.productId;
+        }
       }
-    } else {
-      setCartItems((prev) =>
-        prev.map((item) => (item.id === itemId ? { ...item, quantity } : item))
-      );
+
+      if (isUuid(dbItemId)) {
+        const { error } = await supabase
+          .from("cart_items")
+          .update({ quantity })
+          .eq("user_id", user.id)
+          .eq("product_id", dbItemId);
+
+        if (error) {
+          toast.error("Failed to update quantity: " + error.message);
+        } else {
+          await fetchDbCart(user.id);
+        }
+      }
     }
+    setCartItems((prev) =>
+      prev.map((item) => (item.id === itemId || item.productId === itemId ? { ...item, quantity } : item))
+    );
   };
 
   const clearCart = async () => {

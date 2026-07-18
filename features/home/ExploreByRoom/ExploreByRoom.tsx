@@ -48,9 +48,9 @@ export default function ExploreByRoom() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10">
           <SectionHeading
             title="Explore By Room"
-            subtitle="Curated Spaces"
+            subtitle="Selected Spaces"
             align="left"
-            description="Browse design curations tailored specifically for each room, making it easy to create cohesive luxury environments."
+            description="Browse design collections tailored specifically for each room, making it easy to create cohesive luxury environments."
             className="mb-0 sm:mb-0 max-w-2xl mx-0"
           />
           

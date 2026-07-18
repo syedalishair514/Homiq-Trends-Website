@@ -38,7 +38,7 @@ export default function Instagram() {
             title="Instagram Inspiration"
             subtitle="Social Gallery"
             align="left"
-            description="Share your premium setups using #HomiqTrends and follow us for daily updates on luxury interior curation."
+            description="Share your premium setups using #HomiqTrends and follow us for daily updates on luxury interior design."
             className="mb-0 sm:mb-0 max-w-2xl mx-0"
           />
           

@@ -63,7 +63,7 @@ export default function WishlistPage() {
               <div className="py-12">
                 <EmptyState
                   title="Your wishlist is empty"
-                  description="Explore our curation catalog to save items you love for future planning."
+                  description="Explore our collection catalog to save items you love for future planning."
                   icon={Heart}
                   ctaText="Explore Products"
                   ctaLink="/products"

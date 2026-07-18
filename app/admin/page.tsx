@@ -435,7 +435,7 @@ export default function AdminDashboardPage() {
         // Seed hero banners
         const bannersToInsert = HERO_SLIDES.map((b, idx) => ({
           heading: b.title,
-          subtitle: b.subtitle || "EXCLUSIVE CURATION",
+          subtitle: b.subtitle || "EXCLUSIVE COLLECTION",
           description: b.description || "Curated luxury home items and organic textile design collections.",
           cta_text: b.buttonText || b.ctaText || "Shop Collection",
           cta_link: b.buttonLink || b.ctaLink || "/products",
@@ -988,7 +988,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-8">
             <SectionHeading
               title="Admin Console"
-              subtitle="Curation Controls"
+              subtitle="Collection Controls"
               description="Review boutique analytics, manage product stock checklists, moderate comments, and define store defaults."
             />
 
@@ -1141,7 +1141,7 @@ export default function AdminDashboardPage() {
                 {activeTab === "products" && (
                   <div className="bg-white dark:bg-[#222220] border border-border p-6 rounded-3xl space-y-6">
                     <div className="flex justify-between items-center border-b border-border pb-4">
-                      <h3 className="font-heading text-lg font-semibold text-foreground">Inventory Curation</h3>
+                      <h3 className="font-heading text-lg font-semibold text-foreground">Inventory Catalog</h3>
                       <Button
                         onClick={handleOpenAddProduct}
                         className="bg-primary text-primary-foreground hover:bg-primary/95 text-xs font-bold uppercase tracking-wider py-4 px-4 flex items-center gap-1 cursor-pointer"
@@ -1767,7 +1767,7 @@ export default function AdminDashboardPage() {
                 {/* MODULE 6: REVIEWS QUEUE */}
                 {activeTab === "reviews" && (
                   <div className="bg-white dark:bg-[#222220] border border-border p-6 rounded-3xl space-y-6">
-                    <h3 className="font-heading text-lg font-semibold text-foreground border-b border-border pb-4">Customer Reviews Curation</h3>
+                    <h3 className="font-heading text-lg font-semibold text-foreground border-b border-border pb-4">Customer Reviews Management</h3>
 
                     <div className="space-y-4">
                       {reviews.map((rev) => (

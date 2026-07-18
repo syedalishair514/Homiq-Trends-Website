@@ -174,12 +174,30 @@ export default function CheckoutPage() {
       if (orderError) throw orderError;
 
       // 3. Insert order items and update product inventory stock
+      const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
       for (const item of cartItems) {
+        let productIdToInsert = item.productId;
+        if (!isUuid(productIdToInsert)) {
+          const slug = item.name.toLowerCase().replace(/ /g, "-");
+          const { data: dbProd } = await supabase
+            .from("products")
+            .select("id")
+            .eq("slug", slug)
+            .single();
+
+          if (dbProd) {
+            productIdToInsert = dbProd.id;
+          } else {
+            continue; // skip item if not in database to prevent crash
+          }
+        }
+
         const { error: itemError } = await supabase
           .from("order_items")
           .insert({
             order_id: orderData.id,
-            product_id: item.productId,
+            product_id: productIdToInsert,
             quantity: item.quantity,
             price: item.price
           });
@@ -190,7 +208,7 @@ export default function CheckoutPage() {
         const { data: prodData } = await supabase
           .from("products")
           .select("stock")
-          .eq("id", item.productId)
+          .eq("id", productIdToInsert)
           .single();
 
         if (prodData) {
@@ -198,7 +216,7 @@ export default function CheckoutPage() {
           await supabase
             .from("products")
             .update({ stock: newStock })
-            .eq("id", item.productId);
+            .eq("id", productIdToInsert);
         }
       }
 

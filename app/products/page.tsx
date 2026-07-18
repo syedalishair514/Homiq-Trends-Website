@@ -106,7 +106,7 @@ function ProductsPageContent() {
   const [sortBy, setSortBy] = useState<string>("featured");
   
   // Advanced Filter States
-  const [priceRange, setPriceRange] = useState<number>(1000);
+  const [priceRange, setPriceRange] = useState<number>(150000);
   const [minRating, setMinRating] = useState<number | null>(null);
   const [availability, setAvailability] = useState<string>("all"); // 'all', 'in-stock', 'on-sale'
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -276,13 +276,13 @@ function ProductsPageContent() {
       <div className="space-y-3">
         <div className="flex justify-between items-baseline">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">Price Range</h4>
-          <span className="text-xs font-bold text-accent">${priceRange} Max</span>
+          <span className="text-xs font-bold text-accent">Rs. {priceRange.toLocaleString()} Max</span>
         </div>
         <input
           type="range"
           min={0}
-          max={1000}
-          step={10}
+          max={150000}
+          step={500}
           value={priceRange}
           onChange={(e) => {
             setPriceRange(Number(e.target.value));
@@ -291,8 +291,8 @@ function ProductsPageContent() {
           className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>$0</span>
-          <span>$1,000</span>
+          <span>Rs. 0</span>
+          <span>Rs. 150,000</span>
         </div>
       </div>
 
@@ -405,7 +405,7 @@ function ProductsPageContent() {
             </div>
 
             <SectionHeading
-              title="Design Curation Catalog"
+              title="Design Collection Catalog"
               subtitle="Bespoke Collections"
               description="Explore hand-finished furniture, spun brass lights, Roman travertine trays, and premium wool textiles."
             />

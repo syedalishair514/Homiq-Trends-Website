@@ -21,7 +21,7 @@ export default function AboutPage() {
 
   const milestones = [
     { year: "2024", title: "The Spark", desc: "Homiq Trends was founded as a design study in Milan, focusing on raw stone aesthetics." },
-    { year: "2025", title: "Material Curation", desc: "We established relationships with heritage Tivoli quarries and organic wool weavers in Florence." },
+    { year: "2025", title: "Material Selection", desc: "We established relationships with heritage Tivoli quarries and organic wool weavers in Florence." },
     { year: "2026", title: "Digital Boutique", desc: "Launch of our premium online catalog, shipping bespoke travertine designs globally." }
   ];
 
@@ -159,7 +159,7 @@ export default function AboutPage() {
         <Container className="max-w-4xl">
           <div className="bg-[#1C1C1A] text-white p-8 sm:p-12 rounded-3xl text-center space-y-6">
             <h3 className="font-heading text-2xl font-light text-white leading-relaxed">
-              Explore Our Handcrafted Curation
+              Explore Our Handcrafted Collection
             </h3>
             <p className="text-xs text-[#EAEAEA] font-light max-w-md mx-auto leading-relaxed">
               Find minimalist stone platters, organic linens, and solid walnut shams built for architectural integrity.

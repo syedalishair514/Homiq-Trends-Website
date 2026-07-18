@@ -260,7 +260,6 @@ create index idx_addresses_user on public.addresses(user_id);
 
 
 ------------------ TRIGGERS ON USER SIGNUP ------------------
--- Link auth.users inserts to profiles table automatically
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -271,6 +270,13 @@ begin
         coalesce(new.raw_user_meta_data->>'avatar_url', ''),
         coalesce(new.phone, '')
     );
+    
+    if coalesce(new.raw_user_meta_data->>'role', '') = 'admin' then
+        insert into public.admins (id, role)
+        values (new.id, 'admin')
+        on conflict (id) do nothing;
+    end if;
+    
     return new;
 end;
 $$ language plpgsql security definer;
@@ -289,32 +295,42 @@ create policy "Public profiles are readable by everyone" on public.profiles
 create policy "Users can update their own profiles" on public.profiles
     for update using (auth.uid() = id);
 
+create or replace function public.is_admin()
+returns boolean as $$
+begin
+    return (
+        exists (select 1 from public.admins where id = auth.uid()) or
+        coalesce((auth.jwt() -> 'user_metadata' ->> 'role'), '') = 'admin'
+    );
+end;
+$$ language plpgsql security definer;
+
 -- 2. Categories RLS
 create policy "Categories are readable by everyone" on public.categories
     for select using (true);
 
 create policy "Admins can insert categories" on public.categories
-    for insert with check (exists (select 1 from public.admins where id = auth.uid()));
+    for insert with check (public.is_admin());
 
 create policy "Admins can update categories" on public.categories
-    for update using (exists (select 1 from public.admins where id = auth.uid()));
+    for update using (public.is_admin());
 
 create policy "Admins can delete categories" on public.categories
-    for delete using (exists (select 1 from public.admins where id = auth.uid()));
+    for delete using (public.is_admin());
 
 -- 3. Products RLS
 create policy "Products are readable by everyone" on public.products
     for select using (true);
 
 create policy "Admins can modify products" on public.products
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 4. Product Images RLS
 create policy "Product images are readable by everyone" on public.product_images
     for select using (true);
 
 create policy "Admins can modify product images" on public.product_images
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 5. Addresses RLS
 create policy "Users can view their own addresses" on public.addresses
@@ -331,7 +347,7 @@ create policy "Users can create their own orders" on public.orders
     for insert with check (auth.uid() = user_id);
 
 create policy "Admins can view and update all orders" on public.orders
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 7. Order Items RLS
 create policy "Users can view their own order items" on public.order_items
@@ -340,7 +356,7 @@ create policy "Users can view their own order items" on public.order_items
     ));
 
 create policy "Admins can manage all order items" on public.order_items
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 8. Cart Items RLS
 create policy "Users can manage their own cart" on public.cart_items
@@ -361,28 +377,28 @@ create policy "Users can modify their own reviews" on public.reviews
     for update using (auth.uid() = user_id);
 
 create policy "Admins can manage all reviews" on public.reviews
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 11. Hero Banners RLS
 create policy "Active banners are visible by everyone" on public.hero_banners
     for select using (true);
 
 create policy "Admins can manage banners" on public.hero_banners
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 12. Announcements RLS
 create policy "Announcements are readable by everyone" on public.announcements
     for select using (true);
 
 create policy "Admins can manage announcements" on public.announcements
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 13. Coupons RLS
 create policy "Only admins or logged-in users can select coupons" on public.coupons
     for select using (auth.role() = 'authenticated');
 
 create policy "Admins can manage coupons" on public.coupons
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 14. Coupon Usage RLS
 create policy "Users can select their own coupon usage details" on public.coupon_usage
@@ -397,7 +413,7 @@ create policy "Settings are readable by everyone" on public.settings
     for select using (true);
 
 create policy "Admins can modify settings" on public.settings
-    for all using (exists (select 1 from public.admins where id = auth.uid()));
+    for all using (public.is_admin());
 
 -- 17. Admins RLS
 create policy "Admins check is public readable" on public.admins
