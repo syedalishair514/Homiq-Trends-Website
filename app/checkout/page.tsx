@@ -14,12 +14,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { DESIGN_SYSTEM } from "@/constants/theme";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { ShieldCheck, CreditCard, ArrowRight } from "lucide-react";
+import { ShieldCheck, CreditCard, ArrowRight, Truck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal, cartShippingTotal, clearCart } = useCart();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -33,7 +33,7 @@ export default function CheckoutPage() {
     notes: ""
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "paypal">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "paypal" | "cod">("card");
   const [cardData, setCardData] = useState({
     number: "",
     expiry: "",
@@ -355,7 +355,7 @@ export default function CheckoutPage() {
                 <div className="bg-white dark:bg-[#222220] border border-border p-6 sm:p-8 rounded-3xl space-y-6">
                   <h3 className="font-heading text-lg font-semibold text-foreground">2. Payment Method</h3>
                   
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("card")}
@@ -378,9 +378,20 @@ export default function CheckoutPage() {
                     >
                       PayPal Express
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("cod")}
+                      className={`flex-1 py-4 border rounded-xl flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition-all ${
+                        paymentMethod === "cod"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:bg-secondary"
+                      }`}
+                    >
+                      <Truck className="w-4 h-4" /> Cash on Delivery (COD)
+                    </button>
                   </div>
 
-                  {paymentMethod === "card" ? (
+                  {paymentMethod === "card" && (
                     <div className="space-y-4 pt-2">
                       <div className="space-y-2">
                         <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Cardholder Name</span>
@@ -430,10 +441,20 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
-                  ) : (
+                  )}
+
+                  {paymentMethod === "paypal" && (
                     <div className="bg-[#F8F5F2] dark:bg-[#1C1C1A] p-6 rounded-2xl text-center space-y-2 border border-border">
                       <span className="text-xs text-muted-foreground font-light">
                         PayPal authorization panel will trigger overlay checkout upon clicking &quot;Place Order&quot;.
+                      </span>
+                    </div>
+                  )}
+
+                  {paymentMethod === "cod" && (
+                    <div className="bg-[#F8F5F2] dark:bg-[#1C1C1A] p-6 rounded-2xl text-center space-y-2 border border-border">
+                      <span className="text-xs text-muted-foreground font-light">
+                        Pay with cash upon delivery. No card info or advance transactions are required to place the order.
                       </span>
                     </div>
                   )}
@@ -466,7 +487,7 @@ export default function CheckoutPage() {
                         <h4 className="font-sans font-medium text-foreground truncate">{item.name}</h4>
                         <span className="text-[10px] text-muted-foreground font-light">Qty: {item.quantity}</span>
                       </div>
-                      <span className="font-semibold text-foreground">${item.price * item.quantity}</span>
+                      <span className="font-semibold text-foreground">Rs. {item.price * item.quantity}</span>
                     </div>
                   ))}
                 </div>
@@ -475,23 +496,23 @@ export default function CheckoutPage() {
                 <div className="space-y-3.5 text-xs">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Items Subtotal</span>
-                    <span className="font-semibold">${cartTotal}</span>
+                    <span className="font-semibold">Rs. {cartTotal}</span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-600">
                       <span>Promo Discount ({couponCode})</span>
-                      <span>-${discountAmount}</span>
+                      <span>-Rs. {discountAmount}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping Courier</span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-500">
-                      {shippingCost === 0 ? "Free" : `$${shippingCost}`}
+                      {shippingCost === 0 ? "Free" : `Rs. ${shippingCost}`}
                     </span>
                   </div>
                   <div className="border-t border-border pt-3.5 flex justify-between items-baseline">
                     <span className="font-semibold text-sm">Amount Due</span>
-                    <span className="text-xl font-bold text-foreground">${estimatedTotal}</span>
+                    <span className="text-xl font-bold text-foreground">Rs. {estimatedTotal}</span>
                   </div>
                 </div>
 

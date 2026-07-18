@@ -6,6 +6,7 @@ export interface CartItem {
   quantity: number;
   image: string;
   attributes?: Record<string, string>;
+  shippingCost?: number;
 }
 
 export interface Cart {

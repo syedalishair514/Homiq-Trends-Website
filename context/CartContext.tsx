@@ -14,6 +14,7 @@ interface CartContextType {
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
+  cartShippingTotal: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -22,6 +23,7 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // 1. Fetch current database cart items
   const fetchDbCart = async (userId: string) => {
@@ -40,7 +42,8 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
         price: Number(item.products?.sale_price ?? item.products?.price ?? 0),
         image: item.products?.product_images?.[0]?.image_url || "",
         quantity: item.quantity,
-        attributes: {}
+        attributes: {},
+        shippingCost: Number(item.products?.shipping_cost || 0)
       }));
       setCartItems(mapped);
     }
@@ -145,33 +148,23 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
 
   // 4. Initial load on mount for guests
   useEffect(() => {
-    if (!user) {
-      const savedCart = localStorage.getItem("homiq_cart");
-      if (savedCart) {
-        try {
-          const parsed = JSON.parse(savedCart);
-          setTimeout(() => {
-            setCartItems(parsed);
-          }, 0);
-        } catch {
-          // ignore
-        }
+    const savedCart = localStorage.getItem("homiq_cart");
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch {
+        // ignore
       }
     }
-  }, [user]);
-
-  const isFirstRender = useRef(true);
+    setIsLoaded(true);
+  }, []);
 
   // 5. Persist guest cart to local storage
   useEffect(() => {
-    if (!user) {
-      if (isFirstRender.current) {
-        isFirstRender.current = false;
-        return;
-      }
+    if (!user && isLoaded) {
       localStorage.setItem("homiq_cart", JSON.stringify(cartItems));
     }
-  }, [cartItems, user]);
+  }, [cartItems, user, isLoaded]);
 
   const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
@@ -211,6 +204,7 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
           image: product.images[0] || "",
           quantity,
           attributes,
+          shippingCost: product.shippingCost || 0
         };
         toast.success(`Appended ${product.name} to cart.`);
         return [...prev, newItem];
@@ -281,6 +275,7 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartTotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const cartShippingTotal = cartItems.reduce((acc, item) => acc + (item.shippingCost || 0) * item.quantity, 0);
 
   return (
     <CartContext.Provider
@@ -292,6 +287,7 @@ export const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ c
         clearCart,
         cartCount,
         cartTotal,
+        cartShippingTotal,
       }}
     >
       {children}

@@ -18,5 +18,6 @@ export interface Product {
   newArrival?: boolean;
   isNew?: boolean; // backwards compatibility
   attributes?: Record<string, string[]>;
+  shippingCost?: number;
   createdAt: string;
 }

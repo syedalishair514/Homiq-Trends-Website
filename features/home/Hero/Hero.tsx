@@ -33,9 +33,11 @@ export default function Hero() {
           const mapped = data.map((b: any) => ({
             id: b.id,
             title: b.heading,
-            ctaText: b.cta_text || "Discover Catalog",
-            link: b.cta_link || "/products",
-            image: b.image_url
+            subtitle: b.subtitle || "EXCLUSIVE CURATION",
+            description: b.description || "Curated luxury home items and organic textile design collections.",
+            buttonText: b.cta_text || "Shop Collection",
+            buttonLink: b.cta_link || "/products",
+            mediaUrl: b.image_url
           }));
           setSlidesList(mapped);
         } else {

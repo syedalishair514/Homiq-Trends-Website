@@ -204,15 +204,15 @@ export default function ProductCard({ product }: ProductCardProps) {
                 {product.salePrice ? (
                   <>
                     <span className="text-sm font-semibold text-[#1F1F1F] dark:text-[#F5F2EC] font-sans">
-                      ${product.salePrice}
+                      Rs. {product.salePrice}
                     </span>
                     <span className="text-xs line-through text-muted-foreground font-sans">
-                      ${product.price}
+                      Rs. {product.price}
                     </span>
                   </>
                 ) : (
                   <span className="text-sm font-semibold text-[#1F1F1F] dark:text-[#F5F2EC] font-sans">
-                    ${product.price}
+                    Rs. {product.price}
                   </span>
                 )}
               </div>

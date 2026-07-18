@@ -20,7 +20,7 @@ import Footer from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase/client";
 
 export default function CartPage() {
-  const { cartItems, removeFromCart, updateQuantity, cartTotal } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, cartTotal, cartShippingTotal } = useCart();
 
   // Coupon & Shipping States
   const [couponInput, setCouponInput] = useState("");
@@ -35,47 +35,44 @@ export default function CartPage() {
     e.preventDefault();
     if (!couponInput.trim()) return;
 
-    const code = couponInput.trim().toUpperCase();
+    // Direct mock coupon
+    if (couponInput.trim().toUpperCase() === "HOMIQ15") {
+      setCouponDiscount(15);
+      setActiveCoupon("HOMIQ15");
+      toast.success("Promo discount HOMIQ15 code applied!");
+      return;
+    }
+
     const supabase = createClient();
-    const { data: coupon, error } = await supabase
+    const { data, error } = await supabase
       .from("coupons")
       .select("*")
-      .eq("code", code)
+      .eq("code", couponInput.toUpperCase())
       .eq("status", "active")
       .single();
 
-    if (error || !coupon) {
-      if (code === "HOMIQ15") {
-        setActiveCoupon("HOMIQ15");
-        setCouponDiscount(15);
-        toast.success("Coupon code HOMIQ15 (15% Off) applied successfully!");
-        setCouponInput("");
-      } else {
-        toast.error("Invalid or inactive coupon code.");
-      }
+    if (error || !data) {
+      toast.error("Invalid or inactive coupon code.");
     } else {
-      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-        toast.error("This coupon code has expired.");
-        return;
-      }
-      setActiveCoupon(coupon.code);
-      setCouponDiscount(coupon.discount_percent);
-      toast.success(`Coupon code ${coupon.code} (${coupon.discount_percent}% Off) applied successfully!`);
-      setCouponInput("");
+      setCouponDiscount(data.discount_percent);
+      setActiveCoupon(data.code);
+      toast.success(`Promo code ${data.code} applied! Saved ${data.discount_percent}%`);
     }
   };
 
   // Remove Coupon code
   const handleRemoveCoupon = () => {
-    setActiveCoupon(null);
     setCouponDiscount(0);
+    setActiveCoupon(null);
+    setCouponInput("");
+    toast.info("Coupon discount code removed.");
   };
 
   // Calculate Shipping rates
   const handleShippingEstimate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!zipCode) {
-      toast.error("Please enter a valid zip code.");
+    if (!zipCode.trim()) {
+      toast.error("Please enter a destination ZIP Code.");
       return;
     }
     setIsCalculating(true);
@@ -90,7 +87,9 @@ export default function CartPage() {
     return Math.round(cartTotal * (couponDiscount / 100));
   }, [cartTotal, couponDiscount]);
 
-  const shippingCost = shippingMethod === "priority" ? 15 : 0;
+  const shippingCost = cartTotal >= 15000 && shippingMethod === "standard"
+    ? 0
+    : cartShippingTotal + (shippingMethod === "priority" ? 1500 : 0);
   const estimatedTotal = cartTotal - discountAmount + shippingCost;
 
   // Recommendations: Filter products currently in cart, show 4 featured items
@@ -170,7 +169,7 @@ export default function CartPage() {
                                 {category}
                               </span>
                               <span className="text-xs font-semibold text-accent mt-1.5 block">
-                                ${item.price}
+                                Rs. {item.price}
                               </span>
                             </div>
                           </div>
@@ -291,7 +290,7 @@ export default function CartPage() {
                             onChange={() => setShippingMethod("priority")}
                             className="accent-primary"
                           />
-                          <span>Priority Dispatch Delivery ($15, 1-2 days)</span>
+                           <span>Priority Dispatch Delivery (Rs. 1,500, 1-2 days)</span>
                         </label>
                       </div>
                     </div>
@@ -305,18 +304,18 @@ export default function CartPage() {
                   <div className="space-y-4 pt-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Bag Subtotal</span>
-                      <span className="font-semibold">${cartTotal}</span>
+                      <span className="font-semibold">Rs. {cartTotal}</span>
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-sm text-emerald-600">
                         <span>Coupon Discount (15%)</span>
-                        <span>-${discountAmount}</span>
+                        <span>-Rs. {discountAmount}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Courier Delivery</span>
                       <span className="font-semibold text-emerald-600 dark:text-emerald-500">
-                        {shippingCost === 0 ? "Free" : `$${shippingCost}`}
+                        {shippingCost === 0 ? "Free" : `Rs. ${shippingCost}`}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -327,7 +326,7 @@ export default function CartPage() {
 
                   <div className="border-t border-border pt-4 flex justify-between items-baseline">
                     <span className="font-semibold text-sm">Estimated Total</span>
-                    <span className="text-xl font-bold text-foreground font-sans">${estimatedTotal}</span>
+                    <span className="text-xl font-bold text-foreground font-sans">Rs. {estimatedTotal}</span>
                   </div>
 
                   <Button

@@ -19,6 +19,7 @@ export const WishlistProviderWrapper: React.FC<{ children: React.ReactNode }> = 
   const [wishlist, setWishlist] = useState<Product[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // 1. Fetch wishlist from database
   const fetchDbWishlist = async (userId: string) => {
@@ -137,33 +138,23 @@ export const WishlistProviderWrapper: React.FC<{ children: React.ReactNode }> = 
 
   // 4. Initial load on mount for guests
   useEffect(() => {
-    if (!user) {
-      const savedWishlist = localStorage.getItem("homiq_wishlist");
-      if (savedWishlist) {
-        try {
-          const parsed = JSON.parse(savedWishlist);
-          setTimeout(() => {
-            setWishlist(parsed);
-          }, 0);
-        } catch {
-          // ignore
-        }
+    const savedWishlist = localStorage.getItem("homiq_wishlist");
+    if (savedWishlist) {
+      try {
+        setWishlist(JSON.parse(savedWishlist));
+      } catch {
+        // ignore
       }
     }
-  }, [user]);
-
-  const isFirstRender = useRef(true);
+    setIsLoaded(true);
+  }, []);
 
   // 5. Persist guest wishlist to local storage
   useEffect(() => {
-    if (!user) {
-      if (isFirstRender.current) {
-        isFirstRender.current = false;
-        return;
-      }
+    if (!user && isLoaded) {
       localStorage.setItem("homiq_wishlist", JSON.stringify(wishlist));
     }
-  }, [wishlist, user]);
+  }, [wishlist, user, isLoaded]);
 
   const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 

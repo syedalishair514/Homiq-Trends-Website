@@ -49,6 +49,7 @@ create table public.products (
     stock integer not null default 0,
     rating decimal(3,2) default 5.00,
     reviews_count integer default 0,
+    shipping_cost decimal(10,2) not null default 0.00,
     created_at timestamp with time zone default now(),
     updated_at timestamp with time zone default now()
 );
@@ -162,6 +163,8 @@ create trigger update_reviews_updated_at before update on public.reviews
 create table public.hero_banners (
     id uuid primary key default gen_random_uuid(),
     heading text not null,
+    subtitle text,
+    description text,
     cta_text text,
     cta_link text,
     priority integer default 0,

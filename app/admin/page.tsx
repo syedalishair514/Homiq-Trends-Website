@@ -9,6 +9,9 @@ import Container from "@/components/shared/Container";
 import SectionHeading from "@/components/shared/SectionHeading";
 import { Product } from "@/types/product";
 import { useTheme } from "@/providers/ThemeProvider";
+import { PRODUCTS } from "@/constants/products";
+import { CATEGORIES } from "@/constants/categories";
+import { HERO_SLIDES } from "@/constants/hero";
 import { 
   LayoutDashboard, 
   Package, 
@@ -82,6 +85,8 @@ interface AdminBanner {
   image: string;
   schedule: string;
   status: "active" | "inactive";
+  subtitle?: string;
+  description?: string;
 }
 
 interface AdminAnnouncement {
@@ -133,7 +138,7 @@ export default function AdminDashboardPage() {
     email: "concierge@homiqtrends.com",
     vatRate: 20,
     shippingFee: 15,
-    currency: "USD ($)",
+    currency: "PKR (Rs.)",
     stripeActive: true,
     paypalActive: false,
     metaTitle: "Homiq Trends | Luxury Travertine & Cashmere",
@@ -165,7 +170,8 @@ export default function AdminDashboardPage() {
     sku: "",
     stock: 50,
     description: "",
-    image: "/images/products/travertine-plate-1.jpg"
+    image: "/images/products/travertine-plate-1.jpg",
+    shippingCost: 0
   });
 
   interface CategoryType {
@@ -204,11 +210,14 @@ export default function AdminDashboardPage() {
     priority: 1,
     image: "/images/hero/hero-1.jpg",
     schedule: "",
-    status: "active" as "active" | "inactive"
+    status: "active" as "active" | "inactive",
+    subtitle: "",
+    description: ""
   });
 
   // Media folders
   const [activeMediaFolder, setActiveMediaFolder] = useState("All");
+  const [newAnnouncementText, setNewAnnouncementText] = useState("");
 
   // Summary Widgets stats
   const stats = useMemo(() => {
@@ -270,45 +279,88 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   // Load live DB collections
+  // Load live DB collections
   const loadAdminData = useCallback(async () => {
     const supabase = createClient();
     try {
-      // 1. Fetch Products
-      const { data: prodData } = await supabase.from("products").select("*, product_images(*)");
-      if (prodData && prodData.length > 0) {
-        const mappedProds: Product[] = prodData.map((p: any) => ({
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          slug: p.slug,
-          shortDescription: p.short_description || "",
-          description: p.description || "",
-          price: Number(p.price),
-          salePrice: p.sale_price ? Number(p.sale_price) : undefined,
-          images: p.product_images?.sort((a: any, b: any) => a.priority - b.priority).map((img: any) => img.image_url) || [],
-          category: p.category || "Decoration",
-          rating: p.rating ? Number(p.rating) : 5,
-          reviewsCount: p.reviews_count || 0,
-          stock: p.stock,
-          isFeatured: p.rating >= 4.7,
-          bestSeller: p.reviews_count > 30,
-          newArrival: false,
-          createdAt: p.created_at
-        }));
-        setProducts(mappedProds);
-      }
-
-      // 2. Fetch Categories
-      const { data: catData } = await supabase.from("categories").select("*");
-      if (catData && catData.length > 0) {
-        setCategories(catData.map((c: any) => ({
-          id: c.id,
+      // 1. Fetch Categories first (dependency for products)
+      let { data: catData } = await supabase.from("categories").select("*");
+      if (!catData || catData.length === 0) {
+        // Seed categories
+        const categoriesToInsert = CATEGORIES.map((c) => ({
           name: c.name,
           slug: c.slug,
           description: c.description || "",
-          image: c.image_url || "/images/categories/living-room.jpg"
-        })));
+          image_url: c.image || ""
+        }));
+        const { data: insertedCats } = await supabase.from("categories").insert(categoriesToInsert).select("*");
+        catData = insertedCats || [];
+        await logAdminAction("Auto-seeded default collections.");
       }
+
+      setCategories((catData || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description || "",
+        image: c.image_url || "/images/categories/living-room.jpg"
+      })));
+
+      // 2. Fetch Products
+      let { data: prodData } = await supabase.from("products").select("*, product_images(*)");
+      if (!prodData || prodData.length === 0) {
+        // Seed products
+        for (const p of PRODUCTS) {
+          const { data: newProd, error: prodErr } = await supabase.from("products").insert({
+            sku: p.sku || `HT-${Math.floor(1000 + Math.random() * 9000)}`,
+            name: p.name,
+            slug: p.slug,
+            short_description: p.shortDescription || "",
+            description: p.description || "",
+            price: p.price,
+            sale_price: p.salePrice || null,
+            category: p.category,
+            rating: p.rating || 5,
+            reviews_count: p.reviewsCount || 0,
+            stock: p.stock || 50,
+            shipping_cost: 0
+          }).select().single();
+
+          if (!prodErr && newProd && p.images && p.images.length > 0) {
+            const imagesToInsert = p.images.map((imgUrl: string, idx: number) => ({
+              product_id: newProd.id,
+              image_url: imgUrl,
+              priority: idx
+            }));
+            await supabase.from("product_images").insert(imagesToInsert);
+          }
+        }
+        const { data: refetchedProds } = await supabase.from("products").select("*, product_images(*)");
+        prodData = refetchedProds || [];
+        await logAdminAction("Auto-seeded default products catalog.");
+      }
+
+      const mappedProds: Product[] = (prodData || []).map((p: any) => ({
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        slug: p.slug,
+        shortDescription: p.short_description || "",
+        description: p.description || "",
+        price: Number(p.price),
+        salePrice: p.sale_price ? Number(p.sale_price) : undefined,
+        images: p.product_images?.sort((a: any, b: any) => a.priority - b.priority).map((img: any) => img.image_url) || [],
+        category: p.category || "Decoration",
+        rating: p.rating ? Number(p.rating) : 5,
+        reviewsCount: p.reviews_count || 0,
+        stock: p.stock,
+        isFeatured: p.rating >= 4.7,
+        bestSeller: p.reviews_count > 30,
+        newArrival: false,
+        shippingCost: Number(p.shipping_cost || 0),
+        createdAt: p.created_at
+      }));
+      setProducts(mappedProds);
 
       // 3. Fetch Orders
       const { data: orderList } = await supabase
@@ -378,30 +430,57 @@ export default function AdminDashboardPage() {
       }
 
       // 7. Fetch Hero Banners
-      const { data: bannerList } = await supabase.from("hero_banners").select("*").order("priority", { ascending: true });
-      if (bannerList) {
-        setBanners(bannerList.map((b: any) => ({
-          id: b.id,
-          heading: b.heading,
-          ctaText: b.cta_text || "Discover",
-          ctaLink: b.cta_link || "/products",
-          priority: b.priority,
-          image: b.image_url,
-          schedule: "Always",
-          status: b.status as any
-        })));
+      let { data: bannerList } = await supabase.from("hero_banners").select("*").order("priority", { ascending: true });
+      if (!bannerList || bannerList.length === 0) {
+        // Seed hero banners
+        const bannersToInsert = HERO_SLIDES.map((b, idx) => ({
+          heading: b.title,
+          subtitle: b.subtitle || "EXCLUSIVE CURATION",
+          description: b.description || "Curated luxury home items and organic textile design collections.",
+          cta_text: b.buttonText || b.ctaText || "Shop Collection",
+          cta_link: b.buttonLink || b.ctaLink || "/products",
+          priority: idx + 1,
+          image_url: b.mediaUrl || b.image || "",
+          status: "active"
+        }));
+        const { data: insertedBanners } = await supabase.from("hero_banners").insert(bannersToInsert).select("*");
+        bannerList = insertedBanners || [];
+        await logAdminAction("Auto-seeded default hero banners.");
       }
 
+      setBanners((bannerList || []).map((b: any) => ({
+        id: b.id,
+        heading: b.heading,
+        ctaText: b.cta_text || "Discover",
+        ctaLink: b.cta_link || "/products",
+        priority: b.priority,
+        image: b.image_url,
+        schedule: "Always",
+        status: b.status as any,
+        subtitle: b.subtitle || "",
+        description: b.description || ""
+      })));
+
       // 8. Fetch Announcements
-      const { data: annList } = await supabase.from("announcements").select("*");
-      if (annList) {
-        setAnnouncements(annList.map((a: any) => ({
-          id: a.id,
-          text: a.text,
-          schedule: "Always",
-          status: a.status as any
-        })));
+      let { data: annList } = await supabase.from("announcements").select("*");
+      if (!annList || annList.length === 0) {
+        // Seed announcements
+        const announcementsToInsert = [
+          { text: "🚚 Free global shipping on orders over Rs. 15,000", status: "active" },
+          { text: "🔥 Summer Sale: Up to 40% OFF with code SUM40", status: "active" },
+          { text: "✨ New Cashmere Blankets & Stoneware Vases are now in stock", status: "active" },
+        ];
+        const { data: insertedAnns } = await supabase.from("announcements").insert(announcementsToInsert).select("*");
+        annList = insertedAnns || [];
+        await logAdminAction("Auto-seeded default announcements.");
       }
+
+      setAnnouncements((annList || []).map((a: any) => ({
+        id: a.id,
+        text: a.text,
+        schedule: "Always",
+        status: a.status as any
+      })));
 
       // 9. Fetch Store Settings
       const { data: settingsData } = await supabase.from("settings").select("*").eq("key", "store_settings").single();
@@ -535,7 +614,7 @@ export default function AdminDashboardPage() {
   // General CSV orders exporter
   const handleExportOrders = () => {
     const headers = "Order ID,Customer,Total,Date,Status\n";
-    const rows = orders.map((o) => `${o.id},${o.customerName},$${o.total},${o.date},${o.status}`).join("\n");
+    const rows = orders.map((o) => `${o.id},${o.customerName},Rs.${o.total},${o.date},${o.status}`).join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -585,7 +664,8 @@ export default function AdminDashboardPage() {
       sku: `HT-${Math.floor(1000 + Math.random() * 9000)}`,
       stock: 50,
       description: "",
-      image: "/images/products/travertine-plate-1.jpg"
+      image: "/images/products/travertine-plate-1.jpg",
+      shippingCost: 0
     });
     setProductModalOpen(true);
   };
@@ -600,7 +680,8 @@ export default function AdminDashboardPage() {
       sku: prod.sku,
       stock: prod.stock,
       description: prod.description,
-      image: prod.images[0]
+      image: prod.images[0],
+      shippingCost: Number(prod.shippingCost || 0)
     });
     setProductModalOpen(true);
   };
@@ -622,7 +703,8 @@ export default function AdminDashboardPage() {
         category: productForm.category,
         sku: productForm.sku,
         stock: productForm.stock,
-        description: productForm.description
+        description: productForm.description,
+        shipping_cost: productForm.shippingCost
       }).eq("id", editingProduct.id);
 
       if (error) {
@@ -655,7 +737,8 @@ export default function AdminDashboardPage() {
         category: productForm.category,
         stock: productForm.stock,
         rating: 4.8,
-        reviews_count: 0
+        reviews_count: 0,
+        shipping_cost: productForm.shippingCost
       }).select().single();
 
       if (error || !newProd) {
@@ -808,7 +891,17 @@ export default function AdminDashboardPage() {
   // Hero CRUD Handlers
   const handleOpenAddBanner = () => {
     setEditingBanner(null);
-    setBannerForm({ heading: "", ctaText: "Discover", ctaLink: "/products", priority: 1, image: "/images/hero/hero-1.jpg", schedule: "2026-07-01 to 2026-09-30", status: "active" });
+    setBannerForm({
+      heading: "",
+      ctaText: "Discover",
+      ctaLink: "/products",
+      priority: 1,
+      image: "/images/hero/hero-1.jpg",
+      schedule: "2026-07-01 to 2026-09-30",
+      status: "active",
+      subtitle: "NEW COLLECTION",
+      description: "Discover beautifully crafted home essentials."
+    });
     setBannerModalOpen(true);
   };
 
@@ -827,7 +920,9 @@ export default function AdminDashboardPage() {
         cta_link: bannerForm.ctaLink,
         priority: bannerForm.priority,
         image_url: bannerForm.image,
-        status: bannerForm.status
+        status: bannerForm.status,
+        subtitle: bannerForm.subtitle,
+        description: bannerForm.description
       }).eq("id", editingBanner.id);
 
       if (error) {
@@ -843,7 +938,9 @@ export default function AdminDashboardPage() {
         cta_link: bannerForm.ctaLink,
         priority: bannerForm.priority,
         image_url: bannerForm.image,
-        status: bannerForm.status
+        status: bannerForm.status,
+        subtitle: bannerForm.subtitle,
+        description: bannerForm.description
       });
 
       if (error) {
@@ -953,7 +1050,7 @@ export default function AdminDashboardPage() {
                     {/* Summary cards widgets */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {[
-                        { label: "Total Revenue", val: `$${stats.grossRevenue.toLocaleString()}`, desc: "+12.4% vs last month" },
+                        { label: "Total Revenue", val: `Rs. ${stats.grossRevenue.toLocaleString()}`, desc: "+12.4% vs last month" },
                         { label: "Orders Fulfilled", val: stats.completedOrders, desc: "Delivered dispatch nodes" },
                         { label: "Stock Alerts", val: stats.stockAlertCount, desc: "Items below 10 units" },
                         { label: "Customer Reach", val: stats.totalCustomers, desc: "Active subscriber base" }
@@ -971,7 +1068,7 @@ export default function AdminDashboardPage() {
                       {/* Revenue area chart */}
                       <div className="bg-white dark:bg-[#222220] border border-border p-6 rounded-3xl space-y-4">
                         <div className="flex justify-between items-baseline border-b border-border pb-3">
-                          <h4 className="font-heading text-xs font-semibold text-foreground">Monthly Revenue Curation ($)</h4>
+                          <h4 className="font-heading text-xs font-semibold text-foreground">Monthly Revenue Curation (Rs.)</h4>
                           <span className="text-[10px] text-accent font-bold">Jan - Jun Trends</span>
                         </div>
                         <div className="h-44 flex items-center justify-center">
@@ -1030,7 +1127,7 @@ export default function AdminDashboardPage() {
                             <tr key={p.id} className="border-b border-border/40 last:border-b-0">
                               <td className="py-3 font-semibold text-foreground">{p.name}</td>
                               <td className="text-muted-foreground">{p.category}</td>
-                              <td className="font-sans font-semibold">${p.price}</td>
+                              <td className="font-sans font-semibold">Rs. {p.price}</td>
                               <td className={`font-mono ${p.stock < 10 ? "text-red-500 font-bold" : "text-foreground"}`}>{p.stock} units</td>
                             </tr>
                           ))}
@@ -1145,7 +1242,7 @@ export default function AdminDashboardPage() {
                                   {p.stock < 10 && <span title="Low stock warning"><AlertTriangle className="w-3.5 h-3.5 text-red-500" /></span>}
                                 </div>
                               </td>
-                              <td className="font-sans font-bold text-foreground">${p.price}</td>
+                              <td className="font-sans font-bold text-foreground">Rs. {p.price}</td>
                               <td className="text-right flex items-center justify-end gap-2 py-4">
                                 <button
                                   onClick={() => handleOpenEditProduct(p)}
@@ -1210,10 +1307,9 @@ export default function AdminDashboardPage() {
                                 className="bg-secondary/40 border-border text-xs py-4.5 rounded-xl"
                               />
                             </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-1">
-                                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Retail Price ($)</span>
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-1 col-span-1">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Retail Price (Rs.)</span>
                                 <Input
                                   type="number"
                                   required
@@ -1222,7 +1318,16 @@ export default function AdminDashboardPage() {
                                   className="bg-secondary/40 border-border text-xs py-4.5 rounded-xl"
                                 />
                               </div>
-                              <div className="space-y-1">
+                              <div className="space-y-1 col-span-1">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Shipping Cost (Rs.)</span>
+                                <Input
+                                  type="number"
+                                  value={productForm.shippingCost}
+                                  onChange={(e) => setProductForm({ ...productForm, shippingCost: Number(e.target.value) })}
+                                  className="bg-secondary/40 border-border text-xs py-4.5 rounded-xl"
+                                />
+                              </div>
+                              <div className="space-y-1 col-span-1">
                                 <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">SKU Code</span>
                                 <Input
                                   type="text"
@@ -1252,17 +1357,68 @@ export default function AdminDashboardPage() {
                                   onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                                   className="bg-secondary/40 border border-border rounded-xl text-xs w-full p-2.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                                 >
-                                  {categories.map((c) => (
+                                  {(categories.length > 0 ? categories : CATEGORIES.map((c) => ({ name: c.name }))).map((c) => (
                                     <option key={c.name} value={c.name}>{c.name}</option>
                                   ))}
                                 </select>
                               </div>
                             </div>
 
-                            {/* Image selector placeholder */}
+                            {/* Image selector & Upload */}
                             <div className="space-y-2">
-                              <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Choose Slide Image</span>
-                              <div className="grid grid-cols-4 gap-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Slide Image / Custom Upload</span>
+                                <label className="text-[10px] bg-primary text-primary-foreground hover:bg-primary/95 font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg flex items-center gap-1 cursor-pointer">
+                                  <UploadCloud className="w-3.5 h-3.5" /> Upload File (Max 15MB)
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      if (file.size > 15 * 1024 * 1024) {
+                                        toast.error("File size exceeds 15MB limit.");
+                                        return;
+                                      }
+                                      const uploadToast = toast.loading("Compressing and uploading image...");
+                                      try {
+                                        const compressed = await compressImage(file, 0.75);
+                                        const supabase = createClient();
+                                        const cleanName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
+                                        const filename = `products-${Date.now()}-${cleanName}`;
+                                        const { error } = await supabase.storage.from("media").upload(filename, compressed, {
+                                          contentType: "image/jpeg"
+                                        });
+                                        if (error) {
+                                          toast.error("Upload failed: " + error.message, { id: uploadToast });
+                                        } else {
+                                          const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(filename);
+                                          setProductForm({ ...productForm, image: publicUrl });
+                                          toast.success("Product image uploaded successfully!", { id: uploadToast });
+                                          loadAdminData();
+                                        }
+                                      } catch (err: any) {
+                                        toast.error("Error processing file: " + err.message, { id: uploadToast });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                              
+                              {productForm.image && (
+                                <div className="p-2 border border-border rounded-xl bg-secondary/15 flex items-center gap-3">
+                                  <div className="relative w-12 h-16 rounded-lg overflow-hidden border border-border shrink-0">
+                                    <Image src={productForm.image} alt="Preview" fill className="object-cover" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="text-[10px] text-muted-foreground block truncate">Selected Path:</span>
+                                    <span className="text-[11px] text-foreground font-semibold block truncate">{productForm.image}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-4 gap-2 max-h-[120px] overflow-y-auto p-1 border border-border/40 rounded-xl">
                                 {mediaAssets.map((asset) => (
                                   <button
                                     key={asset.id}
@@ -1448,7 +1604,7 @@ export default function AdminDashboardPage() {
                                 <span className="text-[10px] text-muted-foreground block mt-1">Customer: {order.customerName} &bull; Date: {order.date}</span>
                               </div>
                               <div className="flex items-center gap-4 sm:justify-end">
-                                <span className="text-sm font-bold text-foreground font-sans">${order.total}</span>
+                                <span className="text-sm font-bold text-foreground font-sans">Rs. {order.total}</span>
                                 <div className="flex items-center gap-3">
                                   <select
                                     value={order.status}
@@ -1520,13 +1676,13 @@ export default function AdminDashboardPage() {
                             {selectedOrder.items.map((item, idx) => (
                               <div key={idx} className="flex justify-between text-xs font-light text-muted-foreground">
                                 <span>{item.name} <strong className="text-foreground font-semibold">x{item.qty}</strong></span>
-                                <span className="font-sans font-bold text-foreground">${item.price * item.qty}</span>
+                                <span className="font-sans font-bold text-foreground">Rs. {item.price * item.qty}</span>
                               </div>
                             ))}
                           </div>
                           <div className="border-t border-border pt-3 flex justify-between items-baseline text-sm font-bold">
                             <span>Amount Fulfilled</span>
-                            <span className="text-base text-foreground font-sans">${selectedOrder.total}</span>
+                            <span className="text-base text-foreground font-sans">Rs. {selectedOrder.total}</span>
                           </div>
                         </div>
 
@@ -1586,7 +1742,7 @@ export default function AdminDashboardPage() {
                           <div>Phone: <strong className="text-foreground font-semibold">{selectedCustomer.phone}</strong></div>
                           <div>Account Created: <strong className="text-foreground font-semibold">{selectedCustomer.joined}</strong></div>
                           <div>Orders fulfilled: <strong className="text-foreground font-semibold">{selectedCustomer.totalOrders} completed</strong></div>
-                          <div>Total spent: <strong className="text-foreground font-semibold">${selectedCustomer.totalSpent} spent</strong></div>
+                          <div>Total spent: <strong className="text-foreground font-semibold">Rs. {selectedCustomer.totalSpent} spent</strong></div>
                         </div>
 
                         {/* Inline history logs */}
@@ -1595,11 +1751,11 @@ export default function AdminDashboardPage() {
                           <div className="p-4 bg-secondary/10 rounded-xl space-y-3.5 text-xs text-muted-foreground font-light">
                             <div className="flex justify-between">
                               <span>HQ-83921 (Travertine Round Plate)</span>
-                              <span className="font-bold text-foreground">Delivered &bull; $334</span>
+                              <span className="font-bold text-foreground">Delivered &bull; Rs. 33,400</span>
                             </div>
                             <div className="flex justify-between">
                               <span>HQ-83904 (Minimalist Brass Sconce)</span>
-                              <span className="font-bold text-foreground">Shipped &bull; $117</span>
+                              <span className="font-bold text-foreground">Shipped &bull; Rs. 11,700</span>
                             </div>
                           </div>
                         </div>
@@ -1851,7 +2007,9 @@ export default function AdminDashboardPage() {
                                   priority: banner.priority,
                                   image: banner.image,
                                   schedule: banner.schedule,
-                                  status: banner.status
+                                  status: banner.status,
+                                  subtitle: banner.subtitle || "",
+                                  description: banner.description || ""
                                 });
                                 setBannerModalOpen(true);
                               }}
@@ -1901,6 +2059,26 @@ export default function AdminDashboardPage() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-1">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Subtitle / Collection Label</span>
+                                <Input
+                                  type="text"
+                                  value={bannerForm.subtitle}
+                                  onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                                  className="bg-secondary/40 border-border text-xs py-4.5 rounded-xl"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Slide Description</span>
+                                <Input
+                                  type="text"
+                                  value={bannerForm.description}
+                                  onChange={(e) => setBannerForm({ ...bannerForm, description: e.target.value })}
+                                  className="bg-secondary/40 border-border text-xs py-4.5 rounded-xl"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1">
                                 <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">CTA text</span>
                                 <Input
                                   type="text"
@@ -1933,10 +2111,61 @@ export default function AdminDashboardPage() {
                               />
                             </div>
 
-                            {/* Banner image choices */}
+                            {/* Banner image choices & Upload */}
                             <div className="space-y-2">
-                              <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Choose Slide Image</span>
-                              <div className="grid grid-cols-4 gap-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Slide Image / Custom Upload</span>
+                                <label className="text-[10px] bg-primary text-primary-foreground hover:bg-primary/95 font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg flex items-center gap-1 cursor-pointer">
+                                  <UploadCloud className="w-3.5 h-3.5" /> Upload Banner (Max 15MB)
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      if (file.size > 15 * 1024 * 1024) {
+                                        toast.error("File size exceeds 15MB limit.");
+                                        return;
+                                      }
+                                      const uploadToast = toast.loading("Compressing and uploading banner image...");
+                                      try {
+                                        const compressed = await compressImage(file, 0.75);
+                                        const supabase = createClient();
+                                        const cleanName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
+                                        const filename = `banners-${Date.now()}-${cleanName}`;
+                                        const { error } = await supabase.storage.from("media").upload(filename, compressed, {
+                                          contentType: "image/jpeg"
+                                        });
+                                        if (error) {
+                                          toast.error("Upload failed: " + error.message, { id: uploadToast });
+                                        } else {
+                                          const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(filename);
+                                          setBannerForm({ ...bannerForm, image: publicUrl });
+                                          toast.success("Banner image uploaded successfully!", { id: uploadToast });
+                                          loadAdminData();
+                                        }
+                                      } catch (err: any) {
+                                        toast.error("Error processing file: " + err.message, { id: uploadToast });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+
+                              {bannerForm.image && (
+                                <div className="p-2 border border-border rounded-xl bg-secondary/15 flex items-center gap-3">
+                                  <div className="relative w-16 h-10 rounded-lg overflow-hidden border border-border shrink-0">
+                                    <Image src={bannerForm.image} alt="Preview" fill className="object-cover" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="text-[10px] text-muted-foreground block truncate">Selected Path:</span>
+                                    <span className="text-[11px] text-foreground font-semibold block truncate">{bannerForm.image}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-4 gap-2 max-h-[100px] overflow-y-auto p-1 border border-border/40 rounded-xl">
                                 {mediaAssets.map((asset) => (
                                   <button
                                     key={asset.id}
@@ -1980,6 +2209,40 @@ export default function AdminDashboardPage() {
                   <div className="bg-white dark:bg-[#222220] border border-border p-6 rounded-3xl space-y-6">
                     <h3 className="font-heading text-lg font-semibold text-foreground border-b border-border pb-4">Top Announcement Bar</h3>
 
+                    <div className="flex flex-col sm:flex-row gap-2 border-b border-border pb-6">
+                      <Input
+                        type="text"
+                        placeholder="Type new announcement message..."
+                        value={newAnnouncementText}
+                        onChange={(e) => setNewAnnouncementText(e.target.value)}
+                        className="bg-secondary/40 border-border text-xs py-4.5 rounded-xl flex-1"
+                      />
+                      <Button
+                        onClick={async () => {
+                          if (!newAnnouncementText.trim()) {
+                            toast.error("Announcement text cannot be empty.");
+                            return;
+                          }
+                          const supabase = createClient();
+                          const { error } = await supabase.from("announcements").insert({
+                            text: newAnnouncementText,
+                            status: "active"
+                          });
+                          if (error) {
+                            toast.error("Failed to add announcement: " + error.message);
+                          } else {
+                            toast.success("New announcement created!");
+                            setNewAnnouncementText("");
+                            await logAdminAction(`Added new announcement: ${newAnnouncementText}`);
+                            loadAdminData();
+                          }
+                        }}
+                        className="bg-primary text-primary-foreground hover:bg-primary/95 text-xs font-bold uppercase tracking-wider py-4.5 px-6 rounded-xl shrink-0 cursor-pointer"
+                      >
+                        Add
+                      </Button>
+                    </div>
+
                     <div className="space-y-4">
                       {announcements.map((ann) => (
                         <div key={ann.id} className="p-4 bg-secondary/35 dark:bg-[#1C1C1A] border border-border/50 rounded-2xl flex justify-between items-start gap-4">
@@ -1988,7 +2251,7 @@ export default function AdminDashboardPage() {
                             <span className="text-[9px] text-muted-foreground block">Schedule: {ann.schedule} &bull; Status: {ann.status}</span>
                           </div>
 
-                          <div className="flex gap-2 shrink-0">
+                          <div className="flex gap-4 shrink-0 items-center">
                             <button
                               onClick={async () => {
                                 const supabase = createClient();
@@ -2005,6 +2268,22 @@ export default function AdminDashboardPage() {
                               className="text-[10px] uppercase font-bold text-accent hover:underline cursor-pointer"
                             >
                               {ann.status === "active" ? "Deactivate" : "Activate"}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const supabase = createClient();
+                                const { error } = await supabase.from("announcements").delete().eq("id", ann.id);
+                                if (error) {
+                                  toast.error("Failed to delete announcement: " + error.message);
+                                } else {
+                                  toast.success("Announcement deleted successfully.");
+                                  await logAdminAction(`Deleted announcement: ${ann.text}`);
+                                  loadAdminData();
+                                }
+                              }}
+                              className="text-[10px] uppercase font-bold text-red-500 hover:underline cursor-pointer"
+                            >
+                              Delete
                             </button>
                           </div>
                         </div>

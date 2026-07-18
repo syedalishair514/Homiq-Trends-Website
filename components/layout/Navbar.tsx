@@ -211,7 +211,7 @@ export default function Navbar() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <h5 className="font-sans font-medium text-xs text-foreground truncate">{item.name}</h5>
-                              <span className="text-[10px] text-accent font-semibold block mt-0.5">${item.price}</span>
+                              <span className="text-[10px] text-accent font-semibold block mt-0.5">Rs. {item.price}</span>
                               <div className="flex items-center gap-2 mt-2">
                                 <button
                                   onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
@@ -248,7 +248,7 @@ export default function Navbar() {
                     <div className="border-t border-border pt-4 space-y-4">
                       <div className="flex justify-between items-baseline">
                         <span className="text-xs text-muted-foreground">Estimated Subtotal</span>
-                        <span className="text-lg font-bold text-foreground">${cartTotal}</span>
+                        <span className="text-lg font-bold text-foreground">Rs. {cartTotal}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Link href="/cart" onClick={() => setCartDrawerOpen(false)} className="w-full">

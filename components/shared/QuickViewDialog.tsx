@@ -116,10 +116,10 @@ export default function QuickViewDialog({
                 {product.salePrice ? (
                   <>
                     <span className="text-2xl font-semibold text-[#1F1F1F] dark:text-[#F5F2EC] font-sans">
-                      ${product.salePrice}
+                      Rs. {product.salePrice}
                     </span>
                     <span className="text-base line-through text-muted-foreground font-sans">
-                      ${product.price}
+                      Rs. {product.price}
                     </span>
                     <Badge className="bg-[#EEDCCB] text-accent border-none rounded px-2 py-0.5 text-[10px] tracking-wider uppercase font-semibold">
                       Save {product.discountPercentage}%
@@ -127,7 +127,7 @@ export default function QuickViewDialog({
                   </>
                 ) : (
                   <span className="text-2xl font-semibold text-[#1F1F1F] dark:text-[#F5F2EC] font-sans">
-                    ${product.price}
+                    Rs. {product.price}
                   </span>
                 )}
               </div>

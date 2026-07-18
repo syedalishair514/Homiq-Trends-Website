@@ -431,11 +431,11 @@ function ProductDetailsContent({ params }: ProductDetailsProps) {
                 {/* Price block */}
                 <div className="flex items-baseline gap-3 pt-2">
                   <span className="text-3xl font-bold text-foreground font-sans">
-                    ${product.salePrice ?? product.price}
+                    Rs. {product.salePrice ?? product.price}
                   </span>
                   {product.salePrice && (
                     <span className="text-lg text-muted-foreground line-through font-light">
-                      ${product.price}
+                      Rs. {product.price}
                     </span>
                   )}
                 </div>
@@ -732,7 +732,7 @@ function ProductDetailsContent({ params }: ProductDetailsProps) {
               </div>
               <div>
                 <h4 className="font-sans font-semibold text-xs text-foreground truncate max-w-[150px] sm:max-w-xs">{product.name}</h4>
-                <span className="text-xs text-accent font-bold">${product.salePrice ?? product.price}</span>
+                <span className="text-xs text-accent font-bold">Rs. {product.salePrice ?? product.price}</span>
               </div>
             </div>
             <Button
@@ -777,7 +777,7 @@ function ProductDetailsContent({ params }: ProductDetailsProps) {
                   <div className="space-y-2">
                     <span className="font-semibold text-foreground uppercase tracking-wider block text-[10px]">Active Product</span>
                     <div className="font-sans font-bold text-foreground text-sm line-clamp-1">{product.name}</div>
-                    <div>Price: <strong className="text-foreground">${product.salePrice ?? product.price}</strong></div>
+                    <div>Price: <strong className="text-foreground">Rs. {product.salePrice ?? product.price}</strong></div>
                     <div>Rating: <strong className="text-foreground">{product.rating} ★</strong></div>
                     <div>Origin: <strong className="text-foreground">{specs.origin}</strong></div>
                     <div>Materials: <strong className="text-foreground">{specs.materials}</strong></div>
@@ -786,7 +786,7 @@ function ProductDetailsContent({ params }: ProductDetailsProps) {
                   <div className="space-y-2 border-l border-border pl-4">
                     <span className="font-semibold text-foreground uppercase tracking-wider block text-[10px]">Average Catalog Piece</span>
                     <div className="font-sans font-bold text-foreground text-sm line-clamp-1">Homiq Standard Design</div>
-                    <div>Price: <strong className="text-foreground">$165 Average</strong></div>
+                    <div>Price: <strong className="text-foreground">Rs. 16,500 Average</strong></div>
                     <div>Rating: <strong className="text-foreground">4.6 ★ Average</strong></div>
                     <div>Origin: <strong className="text-foreground">Artisan kiln sites</strong></div>
                     <div>Materials: <strong className="text-foreground">Solid natural components</strong></div>
