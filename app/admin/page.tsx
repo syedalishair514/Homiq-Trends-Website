@@ -1027,9 +1027,42 @@ export default function AdminDashboardPage() {
               description="Review boutique analytics, manage product stock checklists, moderate comments, and define store defaults."
             />
 
+            {/* Mobile Horizontal Tabs Navigation */}
+            <div className="lg:hidden flex gap-2 overflow-x-auto pb-4 pt-1 scrollbar-none sticky top-[calc(var(--navbar-height)+0.2rem)] bg-[#FAFAF8] dark:bg-[#181816] z-10 -mx-4 px-4 border-b border-border/40">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setSelectedOrder(null);
+                      setSelectedCustomer(null);
+                    }}
+                    className={`flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-semibold shrink-0 transition-all border cursor-pointer ${
+                      isActive
+                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                        : "bg-white dark:bg-[#222220] border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-semibold shrink-0 text-destructive bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Column Sidebar */}
-              <aside className="lg:col-span-3 bg-white dark:bg-[#222220] border border-border p-6 rounded-3xl space-y-6">
+              <aside className="hidden lg:block lg:col-span-3 bg-white dark:bg-[#222220] border border-border p-6 rounded-3xl space-y-6">
                 <div className="flex items-center gap-3.5 pb-4 border-b border-border">
                   <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                     <UserCheck className="w-5 h-5 stroke-[1.5]" />

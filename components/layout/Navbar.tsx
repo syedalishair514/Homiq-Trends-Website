@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Search, ShoppingBag, User, Heart, Sun, Moon, ArrowRight, Trash2, Shield } from "lucide-react";
+import { Menu, X, Search, ShoppingBag, User, Heart, Sun, Moon, ArrowRight, Trash2, Shield, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useCart } from "@/context/CartContext";
@@ -34,6 +34,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
 
@@ -318,6 +319,44 @@ export default function Navbar() {
                   <div className="flex flex-col space-y-4">
                     {NAV_LINKS.map((link) => {
                       const isActive = pathname === link.href;
+                      if (link.label === "Categories") {
+                        return (
+                          <div key={link.label} className="flex flex-col space-y-1">
+                            <button
+                              onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
+                              className={cn(
+                                "w-full flex items-center justify-between text-left text-sm font-sans uppercase tracking-[0.15em] hover:text-primary py-2.5 px-3 rounded-xl transition-all font-medium cursor-pointer",
+                                isActive ? "text-primary bg-primary/10" : "text-foreground/80 hover:bg-secondary"
+                              )}
+                            >
+                              <span>{link.label}</span>
+                              <ChevronRight className={cn("w-4 h-4 transition-transform duration-200 opacity-60", mobileCategoriesOpen && "rotate-90")} />
+                            </button>
+                            {mobileCategoriesOpen && (
+                              <div className="pl-6 flex flex-col gap-2 pt-1 pb-2 border-l border-border/60 ml-4 space-y-0.5">
+                                <Link
+                                  href={ROUTES.CATEGORIES}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className="text-xs text-muted-foreground hover:text-primary py-1 px-2 rounded-lg hover:bg-secondary transition-all block font-medium"
+                                >
+                                  All Rooms & Categories
+                                </Link>
+                                {CATEGORIES.map((cat) => (
+                                  <Link
+                                    key={cat.id}
+                                    href={`/products?category=${cat.slug}`}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-xs text-muted-foreground hover:text-primary py-1.5 px-2 rounded-lg hover:bg-secondary transition-all flex items-center justify-between font-light"
+                                  >
+                                    <span>{cat.name}</span>
+                                    <span className="text-[8px] bg-secondary/80 dark:bg-[#2C2C2A] px-1.5 py-0.5 rounded text-accent font-bold">{cat.productCount}</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
                       return (
                         <Link
                           key={link.label}
