@@ -954,6 +954,41 @@ export default function AdminDashboardPage() {
     loadAdminData();
   };
 
+  const handleResetBanners = async () => {
+    const supabase = createClient();
+    const uploadToast = toast.loading("Restoring previous banners...");
+    try {
+      // Delete all banners except none (deletes everything)
+      const { error: deleteError } = await supabase
+        .from("hero_banners")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+
+      if (deleteError) throw deleteError;
+
+      // Seed hero banners from HERO_SLIDES constants
+      const bannersToInsert = HERO_SLIDES.map((b, idx) => ({
+        heading: b.title,
+        subtitle: b.subtitle || "EXCLUSIVE COLLECTION",
+        description: b.description || "Luxury home items and organic textile design collections.",
+        cta_text: b.buttonText || b.ctaText || "Shop Collection",
+        cta_link: b.buttonLink || b.ctaLink || "/products",
+        priority: idx + 1,
+        image_url: b.mediaUrl || b.image || "",
+        status: "active"
+      }));
+
+      const { error: insertError } = await supabase.from("hero_banners").insert(bannersToInsert);
+      if (insertError) throw insertError;
+
+      toast.success("Default banners successfully restored!", { id: uploadToast });
+      await logAdminAction("Reset hero banners to defaults");
+      loadAdminData();
+    } catch (err: any) {
+      toast.error("Failed to restore banners: " + err.message, { id: uploadToast });
+    }
+  };
+
   const handleLogout = async () => {
     const supabase = createClient();
     const { error } = await supabase.auth.signOut();
@@ -1975,12 +2010,20 @@ export default function AdminDashboardPage() {
                   <div className="bg-white dark:bg-[#222220] border border-border p-6 rounded-3xl space-y-6">
                     <div className="flex justify-between items-center border-b border-border pb-4">
                       <h3 className="font-heading text-lg font-semibold text-foreground">Hero Slide Banners</h3>
-                      <Button
-                        onClick={handleOpenAddBanner}
-                        className="bg-primary text-primary-foreground hover:bg-primary/95 text-xs font-bold uppercase tracking-wider py-4 px-4 flex items-center gap-1 cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" /> Add Slide
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleResetBanners}
+                          className="bg-transparent border border-border text-foreground hover:bg-secondary text-xs font-bold uppercase tracking-wider py-4 px-4 cursor-pointer"
+                        >
+                          Restore Defaults
+                        </Button>
+                        <Button
+                          onClick={handleOpenAddBanner}
+                          className="bg-primary text-primary-foreground hover:bg-primary/95 text-xs font-bold uppercase tracking-wider py-4 px-4 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" /> Add Slide
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="space-y-4">
