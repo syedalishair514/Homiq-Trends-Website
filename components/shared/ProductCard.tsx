@@ -224,6 +224,17 @@ export default function ProductCard({ product }: ProductCardProps) {
                 <span className="text-[9px] text-muted-foreground font-sans">({product.reviewsCount})</span>
               </div>
             </div>
+
+            {/* Mobile-only Add to Bag Action Button */}
+            <div className="mt-3.5 sm:hidden w-full">
+              <Button
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/95 text-[10px] font-bold uppercase tracking-wider py-3 rounded-xl cursor-pointer"
+              >
+                {isOutOfStock ? "Sold Out" : "Add to Bag"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

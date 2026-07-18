@@ -297,19 +297,17 @@ export default function Navbar() {
               )}
 
               {/* Mobile Menu Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden hover:text-accent hover:bg-transparent cursor-pointer transition-all duration-200"
+                aria-label="Open Mobile Menu"
+              >
+                <Menu className="w-5 h-5 stroke-[1.5]" />
+              </Button>
+
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="md:hidden hover:text-accent hover:bg-transparent cursor-pointer transition-all duration-200"
-                      aria-label="Open Mobile Menu"
-                    >
-                      <Menu className="w-5 h-5 stroke-[1.5]" />
-                    </Button>
-                  }
-                />
                 <SheetContent side="right" className="bg-white dark:bg-[#222220] border-l border-border w-[300px] sm:w-[400px] rounded-l-3xl shadow-2xl">
                   <SheetHeader className="text-left border-b border-border pb-4 mb-6">
                     <SheetTitle className="font-heading tracking-[0.15em] uppercase text-lg text-foreground">
